@@ -1,3 +1,11 @@
+"""Extract features from training images to hd5f db
+
+Modified from:
+    https://gurus.pyimagesearch.com/topic/transfer-learning-example-dogs-and-cats/
+
+Pre-gathered images and pre-calculated features at:
+    https://drive.google.com/drive/folders/1uWwfvjLzEcmpLgejZFz66YM59K9ilYJV?usp=sharing
+"""
 import cv2
 import numpy as np
 from keras.applications import VGG16
@@ -5,12 +13,23 @@ from keras.applications import imagenet_utils
 
 
 class FeatureExtractor:
+    """Wrapper to extract features from images with pre-trained VGG16
+
+    :param batch_size: number of images to extract features from at once
+    :ivar batch_size: see param batch_size
+    :ivar model: pre-trained VGG16 from keras.applications
+    """
     def __init__(self, batch_size=1):
         self.model = VGG16(weights='imagenet', include_top=False)
         self.batch_size = batch_size
 
     @staticmethod
     def preprocess_cv2_image(cv2_image_bgr):
+        """Prepare an OpenCV BGR image for keras.applications.VGG16(weights='imagenet')
+
+        :param cv2_image_bgr: OpenCV style BGR image
+        :return: image with attributes prepared for keras VGG16 imagenet model
+        """
         cv2_image_bgr = cv2.resize(cv2_image_bgr, (224, 224))
         cv2_image_rgb = cv2.cvtColor(cv2_image_bgr, cv2.COLOR_BGR2RGB).astype('float')
         image_4d = np.expand_dims(cv2_image_rgb, axis=0)
@@ -19,6 +38,12 @@ class FeatureExtractor:
         return preprocessed_image
 
     def extract_features(self, images, batch_size=None):
+        """Extract features from batch of prepped images
+
+        :param images: Array of images prepped for keras.applications.VGG16(weights='imagenet')
+        :param batch_size: Number of images to extract features from at once
+        :return: Array of features extracted by keras VGG16 imagenet model
+        """
         if batch_size is None:
             batch_size = self.batch_size
 
@@ -26,6 +51,11 @@ class FeatureExtractor:
         return features.reshape((features.shape[0], 512 * 7 * 7))
 
     def extract_features_cv2(self, cv2_image_bgr):
+        """Extract VGG16 imagenet features from single OpenCV BGR image
+
+        :param cv2_image_bgr: OpenCV BGR image
+        :return: Array of features extracted by keras VGG16 imagenet model
+        """
         preprocessed_image = self.preprocess_cv2_image(cv2_image_bgr)
         features = self.extract_features(preprocessed_image, batch_size=1)
         return features.reshape((features.shape[0], 512 * 7 * 7))
@@ -42,8 +72,6 @@ if __name__ == '__main__':
 
     random.seed(42)
     CLASS_LABELS = {
-        # 'hand': 'not_married',
-        # 'wedding_ring_hand': 'married',
         'gather_married': 'married',
         'gather_non_married': 'not_married',
     }
@@ -78,7 +106,6 @@ if __name__ == '__main__':
     label_encoder = LabelEncoder()
     labels = label_encoder.fit_transform(class_labels)
 
-    print('[INFO] loading network...')
     feature_extractor = FeatureExtractor(batch_size=args['batch_size'])
 
     dataset = HDF5DatasetWriter((len(image_paths), 512 * 7 * 7),
@@ -89,23 +116,19 @@ if __name__ == '__main__':
     dataset.store_class_labels(label_encoder.classes_)
 
     for i in tqdm(range(0, len(image_paths), args['batch_size']), desc='Extracting features'):
-        # extract the batch of images and labels, then initialize the
-        # list of actual images that will be passed through the network
-        # for feature extraction
         batch_paths = image_paths[i:i + args['batch_size']]
         batch_labels = labels[i:i + args['batch_size']]
         batch_images = []
 
+        # Perform batch feature extraction and add to db
         for (j, image_path) in enumerate(batch_paths):
             image = cv2.imread(image_path)
             image = feature_extractor.preprocess_cv2_image(image)
             batch_images.append(image)
 
         batch_images = np.vstack(batch_images)
-        features = feature_extractor.extract_features(batch_images)
+        feats = feature_extractor.extract_features(batch_images)
 
-        # add the features and labels to our HDF5 dataset
-        dataset.add(features, batch_labels)
+        dataset.add(feats, batch_labels)
 
-    # close the dataset
     dataset.close()

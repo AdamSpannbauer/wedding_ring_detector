@@ -1,4 +1,4 @@
-"""Source: https://gurus.pyimagesearch.com/topic/transfer-learning-example-dogs-and-cats/"""
+"""Modified from: https://gurus.pyimagesearch.com/topic/transfer-learning-example-dogs-and-cats/"""
 import os
 import h5py
 
