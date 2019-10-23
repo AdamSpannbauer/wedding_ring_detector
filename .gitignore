@@ -1,3 +1,9 @@
+# large files
+model.pickle
+*.hdf5
+*.zip
+images/*
+
 # pycharm
 .idea/*
 
