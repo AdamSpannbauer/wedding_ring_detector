@@ -1,4 +1,8 @@
-"""Modified from: https://gurus.pyimagesearch.com/topic/transfer-learning-example-dogs-and-cats/"""
+"""Utility class for working with hdf5 files
+
+Modified from:
+    https://gurus.pyimagesearch.com/topic/transfer-learning-example-dogs-and-cats/
+"""
 import os
 import h5py
 

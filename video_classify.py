@@ -1,8 +1,4 @@
-"""Apply model to frames of video from web-cam
-
-Pre-gathered images, pre-calculated features, and pre-trained model at:
-    https://drive.google.com/drive/folders/1uWwfvjLzEcmpLgejZFz66YM59K9ilYJV?usp=sharing
-"""
+"""Apply model to frames of video from web-cam"""
 import pickle
 import cv2
 import imutils.text

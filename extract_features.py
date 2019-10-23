@@ -2,9 +2,6 @@
 
 Modified from:
     https://gurus.pyimagesearch.com/topic/transfer-learning-example-dogs-and-cats/
-
-Pre-gathered images and pre-calculated features at:
-    https://drive.google.com/drive/folders/1uWwfvjLzEcmpLgejZFz66YM59K9ilYJV?usp=sharing
 """
 import cv2
 import numpy as np

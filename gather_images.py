@@ -1,8 +1,4 @@
-"""Script to gather training images from web-cam
-
-Pre-gathered images at:
-    https://drive.google.com/drive/folders/1uWwfvjLzEcmpLgejZFz66YM59K9ilYJV?usp=sharing
-"""
+"""Script to gather training images from web-cam"""
 FLAGS = {
     'm': 'gather_married',
     'n': 'gather_non_married',

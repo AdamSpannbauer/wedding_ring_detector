@@ -2,9 +2,6 @@
 
 Modified from:
     https://gurus.pyimagesearch.com/topic/transfer-learning-example-dogs-and-cats/
-
-Pre-gathered images, pre-calculated features, and pre-trained model at:
-    https://drive.google.com/drive/folders/1uWwfvjLzEcmpLgejZFz66YM59K9ilYJV?usp=sharing
 """
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
