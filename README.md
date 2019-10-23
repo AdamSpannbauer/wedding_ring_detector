@@ -6,11 +6,4 @@
 
 Toy project to classify hand as married or not married based on presence of ring.
 
-<br><br><br><br><br><br><br>
----
-
-<p align='center'>
-  <img src='http://giphygifs.s3.amazonaws.com/media/23sFpFl5V3HIk/giphy.gif' width=30%>
-</p>
-
-gif source: [giphy](https://giphy.com/gifs/beyonce-favorite-single-ladies-23sFpFl5V3HIk)
+See [this post on my blog](https://adamspannbauer.github.io/2019/10/23/wedding-ring-classifier/) for a high level write-up of this project.
