@@ -1,13 +1,16 @@
 # Wedding Ring Detector
 
 <p align='center'>
-  <img src='readme/demo.gif' width=80%>
+  <img src='readme/demo.gif' width=70%>
 </p>
 
-Toy project to classify hand images as married or not married
+Toy project to classify hand as married or not married based on presence of ring.
+
+<br><br><br><br><br><br><br>
+---
 
 <p align='center'>
-  <img src='http://giphygifs.s3.amazonaws.com/media/23sFpFl5V3HIk/giphy.gif' width=80%>
+  <img src='http://giphygifs.s3.amazonaws.com/media/23sFpFl5V3HIk/giphy.gif' width=30%>
 </p>
 
 <sub>
