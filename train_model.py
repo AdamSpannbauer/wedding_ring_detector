@@ -1,5 +1,12 @@
+"""Train logistic regression model on hdf5 features for classification
+
+Modified from:
+    https://gurus.pyimagesearch.com/topic/transfer-learning-example-dogs-and-cats/
+
+Pre-gathered images, pre-calculated features, and pre-trained model at:
+    https://drive.google.com/drive/folders/1uWwfvjLzEcmpLgejZFz66YM59K9ilYJV?usp=sharing
+"""
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
 import argparse
 import pickle
@@ -14,27 +21,17 @@ ap.add_argument('-j', '--jobs', type=int, default=-1,
                 help='# of jobs to run when tuning hyperparameters')
 args = vars(ap.parse_args())
 
+with h5py.File(args['db'], 'r') as db:
+    # Train test split (pre-shuffled)
+    i = int(db['labels'].shape[0] * 0.9)
 
-db = h5py.File(args['db'], 'r')
-i = int(db['labels'].shape[0] * 0.9)
+    # C decided with sklearn.model_selection.GridSearchCV
+    model = LogisticRegression(C=0.1)
+    model.fit(db['features'][:i], db['labels'][:i])
 
-print('[INFO] tuning hyperparameters...')
-params = {'C': [0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0]}
-model = GridSearchCV(LogisticRegression(), params, cv=3,
-                     n_jobs=args['jobs'])
-model.fit(db['features'][:i], db['labels'][:i])
-print('[INFO] best hyperparameters: {}'.format(model.best_params_))
+    preds = model.predict(db['features'][i:])
+    print(classification_report(db['labels'][i:], preds,
+                                target_names=db['label_names']))
 
-# evaluate the model
-print('[INFO] evaluating...')
-preds = model.predict(db['features'][i:])
-print(classification_report(db['labels'][i:], preds,
-                            target_names=db['label_names']))
-
-print('[INFO] saving model...')
-f = open(args['model'], 'wb')
-f.write(pickle.dumps(model.best_estimator_))
-f.close()
-
-# close the database
-db.close()
+with open(args['model'], 'wb') as f:
+    f.write(pickle.dumps(model))
