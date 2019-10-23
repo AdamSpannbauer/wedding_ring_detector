@@ -2,6 +2,8 @@
 *.hdf5
 *.zip
 images/*
+images_old/*
+*.avi
 
 # pycharm
 .idea/*
