@@ -98,6 +98,7 @@ if __name__ == '__main__':
     marriage_predictor = MarriagePredictor(threshold=0.5)
 
     vidcap = cv2.VideoCapture(0)
+    writer = None
     while True:
         grabbed_frame, frame = vidcap.read()
         if not grabbed_frame:
@@ -120,8 +121,21 @@ if __name__ == '__main__':
                               color=(0, 0, 255),
                               thickness=2)
 
+        frame = imutils.resize(frame, width=750)
+        if writer is None:
+            h, w = frame.shape[:2]
+
+            # setup video writer
+            writer = cv2.VideoWriter('video_classifier_output.avi',
+                                     cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+                                     15, (w, h), True)
+
+        writer.write(frame)
+
         cv2.imshow('Marriage Cam (ESC to quit)', frame)
         key = cv2.waitKey(10)
 
         if key == 27:
             break
+
+    writer.release()
