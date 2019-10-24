@@ -3,10 +3,16 @@
 Modified from:
     https://gurus.pyimagesearch.com/topic/transfer-learning-example-dogs-and-cats/
 """
+import os
+import random
 import cv2
 import numpy as np
+from tqdm import tqdm
+import imutils.paths
 from keras.applications import VGG16
 from keras.applications import imagenet_utils
+from sklearn.preprocessing import LabelEncoder
+from hdf5_dataset_writer import HDF5DatasetWriter
 
 
 class FeatureExtractor:
@@ -58,63 +64,33 @@ class FeatureExtractor:
         return features.reshape((features.shape[0], 512 * 7 * 7))
 
 
-if __name__ == '__main__':
-    import argparse
-    import random
-    import os
-    from tqdm import tqdm
-    import imutils.paths
-    from sklearn.preprocessing import LabelEncoder
-    from hdf5_dataset_writer import HDF5DatasetWriter
+def extract_features(image_paths, hdf5_file, batch_size=32, buffer_size=1000):
+    """Build hdf5 dataset of features
 
-    random.seed(42)
-    CLASS_LABELS = {
-        'gather_married': 'married',
-        'gather_non_married': 'not_married',
-    }
-
-    ap = argparse.ArgumentParser()
-    ap.add_argument('-d', '--dataset', default='images',
-                    help='path to input dataset')
-    ap.add_argument('-o', '--output', default='features.hdf5',
-                    help='path to output HDF5 file')
-    ap.add_argument('-b', '--batch_size', type=int, default=32,
-                    help='batch size of images to be passed through network')
-    ap.add_argument('-s', '--buffer_size', type=int, default=1000,
-                    help='size of feature extraction buffer')
-    args = vars(ap.parse_args())
-
-    all_image_paths = list(imutils.paths.list_images(args['dataset']))
-    random.shuffle(all_image_paths)
-
-    class_labels = []
-    image_paths = []
-    for image_path in tqdm(all_image_paths, desc='Filtering images'):
-        dir_label = image_path.split(os.path.sep)[-2]
-
-        try:
-            class_label = CLASS_LABELS[dir_label]
-        except KeyError:
-            continue
-
-        class_labels.append(class_label)
-        image_paths.append(image_path)
+    :param image_paths: list of image paths (their class label is assumed to be their parent dir name)
+    :param hdf5_file: name of hdf5 file for output to be written to
+    :param batch_size: number of images to extract features from at once
+    :param buffer_size: size of feature extraction buffer
+    :return: None; output is written to `hdf5_file`
+    """
+    random.shuffle(image_paths)
+    class_labels = [p.split(os.path.sep)[-2] for p in image_paths]
 
     label_encoder = LabelEncoder()
     labels = label_encoder.fit_transform(class_labels)
 
-    feature_extractor = FeatureExtractor(batch_size=args['batch_size'])
+    feature_extractor = FeatureExtractor(batch_size=batch_size)
 
     dataset = HDF5DatasetWriter((len(image_paths), 512 * 7 * 7),
-                                args['output'],
+                                hdf5_file,
                                 data_key='features',
-                                buff_size=args['buffer_size'],
+                                buff_size=buffer_size,
                                 overwrite=True)
     dataset.store_class_labels(label_encoder.classes_)
 
-    for i in tqdm(range(0, len(image_paths), args['batch_size']), desc='Extracting features'):
-        batch_paths = image_paths[i:i + args['batch_size']]
-        batch_labels = labels[i:i + args['batch_size']]
+    for i in tqdm(range(0, len(image_paths), batch_size), desc='Extracting features'):
+        batch_paths = image_paths[i:i + batch_size]
+        batch_labels = labels[i:i + batch_size]
         batch_images = []
 
         # Perform batch feature extraction and add to db
@@ -129,3 +105,22 @@ if __name__ == '__main__':
         dataset.add(feats, batch_labels)
 
     dataset.close()
+
+
+if __name__ == '__main__':
+    import argparse
+    random.seed(42)
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-d', '--dataset', default='images',
+                    help='path to input dataset')
+    ap.add_argument('-o', '--output', default='features.hdf5',
+                    help='path to output HDF5 file')
+    ap.add_argument('-b', '--batch_size', type=int, default=32,
+                    help='batch size of images to be passed through network')
+    ap.add_argument('-s', '--buffer_size', type=int, default=1000,
+                    help='size of feature extraction buffer')
+    args = vars(ap.parse_args())
+
+    im_paths = list(imutils.paths.list_images(args['dataset']))
+    extract_features(im_paths, args['output'], args['batch_size'])

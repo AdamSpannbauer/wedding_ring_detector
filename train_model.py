@@ -3,32 +3,43 @@
 Modified from:
     https://gurus.pyimagesearch.com/topic/transfer-learning-example-dogs-and-cats/
 """
+import pickle
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
-import argparse
-import pickle
 import h5py
 
-ap = argparse.ArgumentParser()
-ap.add_argument('-d', '--db', default='features.hdf5',
-                help='path HDF5 database')
-ap.add_argument('-m', '--model', default='model.pickle',
-                help='path to output model')
-ap.add_argument('-j', '--jobs', type=int, default=-1,
-                help='# of jobs to run when tuning hyperparameters')
-args = vars(ap.parse_args())
 
-with h5py.File(args['db'], 'r') as db:
-    # Train test split (pre-shuffled)
-    i = int(db['labels'].shape[0] * 0.9)
+def train_model(h5py_db, model_output='model.pickle'):
+    """Train logistic regression classifier
+
+    :param h5py_db: path to HDF5 database containing 'features', 'labels', & 'label_names'
+    :param model_output: path to save trained model to using pickle
+    :return: None; output is written to `model_output`
+    """
+    # Train test split (assumed to be pre-shuffled)
+    i = int(h5py_db['labels'].shape[0] * 0.7)
 
     # C decided with sklearn.model_selection.GridSearchCV
     model = LogisticRegression(C=0.1)
-    model.fit(db['features'][:i], db['labels'][:i])
+    model.fit(h5py_db['features'][:i], h5py_db['labels'][:i])
 
-    preds = model.predict(db['features'][i:])
-    print(classification_report(db['labels'][i:], preds,
-                                target_names=db['label_names']))
+    preds = model.predict(h5py_db['features'][i:])
+    print(classification_report(h5py_db['labels'][i:], preds,
+                                target_names=h5py_db['label_names']))
 
-with open(args['model'], 'wb') as f:
-    f.write(pickle.dumps(model))
+    with open(model_output, 'wb') as f:
+        f.write(pickle.dumps(model))
+
+
+if __name__ == '__main__':
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-d', '--db', default='features.hdf5',
+                    help='path HDF5 database')
+    ap.add_argument('-m', '--model', default='model.pickle',
+                    help='path to output model')
+    args = vars(ap.parse_args())
+
+    with h5py.File(args['db'], 'r') as db:
+        train_model(db, args['model'])

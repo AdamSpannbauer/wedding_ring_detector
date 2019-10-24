@@ -1,21 +1,24 @@
 """Apply model to frames of video from web-cam"""
 import pickle
+import numpy as np
 import cv2
 import imutils.text
 from extract_features import FeatureExtractor
 
 
-class MarriagePredictor:
-    """Wrapper class to hold binary married/not married hand classifier
+class BinaryPredictor:
+    """Wrapper class to hold binary classifier
 
-    :param model_path: File path to pickled marriage/not married sklearn model
-    :param threshold: Cutoff to be considered not married (if married <= threshold then label is not married)
-    :ivar threshold: see param threshold
-    :ivar labels: Model class labels for [0, 1] classes
+    :param labels: Model class labels for [0, 1] classes
+    :param model_path: File path to pickled sklearn binary classifier
+    :param threshold: Cutoff to be considered class 1 (if prob(0) <= threshold then label is 1)
     """
-    def __init__(self, model_path='model.pickle', threshold=0.5):
+    def __init__(self, labels=None, model_path='model.pickle', threshold=0.5):
         self.threshold = threshold
-        self.labels = ['Married', 'Not Married']
+        if labels is None:
+            self.labels = ['Married', 'Not Married']
+        else:
+            self.labels = labels
         self._feature_extractor = FeatureExtractor()
 
         with open(model_path, 'rb') as f:
@@ -25,11 +28,9 @@ class MarriagePredictor:
         features = self._feature_extractor.extract_features_cv2(image)
         probabilities = self.model.predict_proba(features)[0]
 
-        label_ind = 0
-        if probabilities[0] <= self.threshold:
-            label_ind = 1
+        ind = np.argmax(probabilities)
 
-        return self.labels[label_ind], probabilities
+        return self.labels[ind], probabilities
 
 
 def put_alpha_centered_text(img, text, alpha=0.9,
@@ -94,17 +95,16 @@ def text_bar_chart(labs, vals, length=10, display_val=False, highlight_max=False
     return bar_text_lines
 
 
-if __name__ == '__main__':
-    marriage_predictor = MarriagePredictor(threshold=0.5)
-
-    vidcap = cv2.VideoCapture(0)
-    writer = None
+def video_classify(labels, model_path='model.pickle', video_capture=0):
+    predictor = BinaryPredictor(labels=labels, model_path=model_path)
+    vidcap = cv2.VideoCapture(video_capture)
+    # writer = None
     while True:
         grabbed_frame, frame = vidcap.read()
         if not grabbed_frame:
             break
 
-        lab, probs = marriage_predictor.predict(frame)
+        lab, probs = predictor.predict(frame)
 
         put_alpha_centered_text(frame,
                                 text=lab,
@@ -112,7 +112,7 @@ if __name__ == '__main__':
                                 font_scale=2,
                                 thickness=3)
 
-        bar_text = text_bar_chart(marriage_predictor.labels, probs, highlight_max=True)
+        bar_text = text_bar_chart(predictor.labels, probs, highlight_max=True)
         imutils.text.put_text(frame,
                               text=bar_text,
                               org=(10, 25),
@@ -122,20 +122,37 @@ if __name__ == '__main__':
                               thickness=2)
 
         frame = imutils.resize(frame, width=750)
-        if writer is None:
-            h, w = frame.shape[:2]
+        # if writer is None:
+        #     h, w = frame.shape[:2]
+        #
+        #     # setup video writer
+        #     writer = cv2.VideoWriter('video_classifier_output.avi',
+        #                              cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+        #                              15, (w, h), True)
+        #
+        # writer.write(frame)
 
-            # setup video writer
-            writer = cv2.VideoWriter('video_classifier_output.avi',
-                                     cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
-                                     15, (w, h), True)
-
-        writer.write(frame)
-
-        cv2.imshow('Marriage Cam (ESC to quit)', frame)
+        cv2.imshow('Classifying (ESC to quit)', frame)
         key = cv2.waitKey(10)
 
         if key == 27:
             break
 
-    writer.release()
+    # writer.release()
+
+
+if __name__ == '__main__':
+    import argparse
+    from gather_images import try_int
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-i', '--input_video', type=try_int, default=0,
+                    help='Path to input video. '
+                         '(can be number to indicate web cam; see cv2.VideoCapture docs)')
+    ap.add_argument('-m', '--model_path', default='model.pickle',
+                    help='Path to binary classification model')
+    args = vars(ap.parse_args())
+
+    video_classify(labels=['Married', 'Not Married'],
+                   model_path=args['model_path'],
+                   video_capture=args['input_video'])
