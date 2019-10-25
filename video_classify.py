@@ -6,8 +6,8 @@ import imutils.text
 from extract_features import FeatureExtractor
 
 
-class BinaryPredictor:
-    """Wrapper class to hold binary classifier
+class Classifier:
+    """Wrapper class to hold imnet feature extractor/classifier
 
     :param labels: Model class labels for [0, 1] classes
     :param model_path: File path to pickled sklearn binary classifier
@@ -95,10 +95,19 @@ def text_bar_chart(labs, vals, length=10, display_val=False, highlight_max=False
     return bar_text_lines
 
 
-def video_classify(labels, model_path='model.pickle', video_capture=0):
-    predictor = BinaryPredictor(labels=labels, model_path=model_path)
+def video_classify(labels, model_path='model.pickle', video_capture=0, output_path=None):
+    """Wrapper of frame-by-frame image classification
+
+    :param labels: list of class label names (in same order as in model)
+    :param model_path: path to pickled model file
+    :param video_capture: value to be passed to cv2.VideoCapture
+    :param output_path: optional output path for video to be written to
+    :return: None
+    """
+    predictor = Classifier(labels=labels, model_path=model_path)
     vidcap = cv2.VideoCapture(video_capture)
-    # writer = None
+
+    writer = None
     while True:
         grabbed_frame, frame = vidcap.read()
         if not grabbed_frame:
@@ -122,15 +131,15 @@ def video_classify(labels, model_path='model.pickle', video_capture=0):
                               thickness=2)
 
         frame = imutils.resize(frame, width=750)
-        # if writer is None:
-        #     h, w = frame.shape[:2]
-        #
-        #     # setup video writer
-        #     writer = cv2.VideoWriter('video_classifier_output.avi',
-        #                              cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
-        #                              15, (w, h), True)
-        #
-        # writer.write(frame)
+
+        if output_path is not None:
+            if writer is None:
+                h, w = frame.shape[:2]
+                writer = cv2.VideoWriter('video_classifier_output.avi',
+                                         cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+                                         15, (w, h), True)
+
+            writer.write(frame)
 
         cv2.imshow('Classifying (ESC to quit)', frame)
         key = cv2.waitKey(10)
@@ -138,7 +147,8 @@ def video_classify(labels, model_path='model.pickle', video_capture=0):
         if key == 27:
             break
 
-    # writer.release()
+    if writer is not None:
+        writer.release()
 
 
 if __name__ == '__main__':

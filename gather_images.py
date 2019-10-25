@@ -6,6 +6,13 @@ import cv2
 
 
 def update_flag(key_press, current_flag, flags):
+    """Handle key press from cv2.waitKey() for capturing frames
+
+    :param key_press: output from `cv2.waitKey()`
+    :param current_flag: value of 'flag' holding previous key press
+    :param flags: dictionary mapping key presses to class labels
+    :return: new flag value
+    """
     if key_press < 0 or chr(key_press) not in flags.keys():
         return current_flag
 
@@ -20,7 +27,11 @@ def update_flag(key_press, current_flag, flags):
 
 
 def try_int(x):
-    """Helper to accept int and str from argparse for cv2.VideoCapture"""
+    """Helper to accept int and str from argparse for cv2.VideoCapture
+
+    :param x: input from arparse
+    :return: x converted to int; if Value error x returned unchanged
+    """
     try:
         return int(x)
     except ValueError:
@@ -28,6 +39,11 @@ def try_int(x):
 
 
 def prompt_labels(n_class=2):
+    """Prompt user for class labels and map them to keys for gathering training data
+
+    :param n_class: number of classes to prompt labels for
+    :return: tuple of labels and key press their mapped to
+    """
     if n_class > 26:
         raise ValueError('Only supports up to 26 classes')
 
@@ -41,6 +57,11 @@ def prompt_labels(n_class=2):
 
 
 def mkdirs(dir_names):
+    """Create dirs if they don't exist
+
+    :param dir_names: names of dirs to create; if nested, provide parent in list before child
+    :return: None
+    """
     for dir_name in dir_names:
         if not os.path.isdir(dir_name):
             os.mkdir(dir_name)
